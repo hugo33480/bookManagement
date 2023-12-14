@@ -8,6 +8,7 @@ import assertk.assertions.isTrue
 import com.jicay.bookmanagement.domain.model.Book
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -34,8 +35,8 @@ class BookDAOIT {
     @BeforeEach
     fun beforeEach() {
         performQuery(
-            // language=sql
-            "DELETE FROM book"
+                // language=sql
+                "DELETE FROM book"
         )
     }
 
@@ -43,8 +44,8 @@ class BookDAOIT {
     fun `get all books from db`() {
         // GIVEN
         performQuery(
-            // language=sql
-            """
+                // language=sql
+                """
                insert into book (title, author)
                values 
                    ('Hamlet', 'Shakespeare'),
@@ -57,9 +58,9 @@ class BookDAOIT {
 
         // THEN
         assertThat(res).containsExactlyInAnyOrder(
-            Book("Hamlet", "Shakespeare"),
-            Book("Les fleurs du mal", "Beaudelaire"),
-            Book("Harry Potter", "Rowling")
+                Book("Hamlet", "Shakespeare"),
+                Book("Les fleurs du mal", "Beaudelaire"),
+                Book("Harry Potter", "Rowling")
         )
     }
 
@@ -71,8 +72,8 @@ class BookDAOIT {
 
         // THEN
         val res = performQuery(
-            // language=sql
-            "SELECT * from book"
+                // language=sql
+                "SELECT * from book"
         )
 
         assertThat(res.size).isEqualTo(1)
