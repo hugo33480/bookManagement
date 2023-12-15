@@ -3,17 +3,17 @@ package com.jicay.bookmanagement.infrastructure.driver.web
 import com.jicay.bookmanagement.domain.model.Book
 import com.jicay.bookmanagement.domain.usecase.BookUseCase
 import com.ninjasquad.springmockk.MockkBean
-import io.mockk.every
-import io.mockk.justRun
-import io.mockk.verify
+import io.mockk.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.http.MediaType
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 
 @ExtendWith(SpringExtension::class)
@@ -96,5 +96,45 @@ class BookControllerIT {
         }
 
         verify(exactly = 0) { bookUseCase.addBook(any()) }
+    }
+
+
+    @Test
+    fun `reserve book endpoint should return 200 OK when book is successfully reserved`() {
+        // Arrange
+        val bookTitle = "ReservedBook"
+        coEvery { bookUseCase.reserveBook(any()) } just runs
+
+        // Act and Assert
+        mockMvc.patch("/books/reserve") {
+            content = """
+            {
+                "bookTitle": "$bookTitle"
+            }
+        """.trimIndent()
+            contentType = APPLICATION_JSON
+            accept = APPLICATION_JSON
+        }
+                .andExpect {
+                    status { isOk() }
+                }
+
+        // Verify that the use case method was called
+        coVerify(exactly = 1) { bookUseCase.reserveBook(eq(bookTitle)) }
+    }
+
+    @Test
+    fun `reserve book endpoint should return 400 Bad Request when book name is not provided`() {
+        // Act and Assert
+        mockMvc.patch("/books/reserve") {
+            contentType = APPLICATION_JSON
+            accept = APPLICATION_JSON
+        }
+                .andExpect {
+                    status { isBadRequest() }
+                }
+
+        // Verify that the use case method was not called
+        verify(exactly = 0) { bookUseCase.reserveBook(any()) }
     }
 }

@@ -2,6 +2,9 @@ package com.jicay.bookmanagement
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
+import assertk.assertions.isTrue
+import io.cucumber.datatable.DataTable
 import io.cucumber.java.Before
 import io.cucumber.java.Scenario
 import io.cucumber.java.en.Then
@@ -23,8 +26,8 @@ class BookStepDefs {
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()
     }
 
-    @When("the user creates the book {string} written by {string}")
-    fun createBook(title: String, author: String) {
+    @When("the user creates the book {string} written by {string} and available {string}")
+    fun createBook(title: String, author: String, available: String) {
         given()
             .contentType(ContentType.JSON)
             .and()
@@ -32,7 +35,8 @@ class BookStepDefs {
                 """
                     {
                       "name": "$title",
-                      "author": "$author"
+                      "author": "$author",
+                      "available": ${available.toBoolean()}
                     }
                 """.trimIndent()
             )
@@ -40,6 +44,25 @@ class BookStepDefs {
             .post("/books")
             .then()
             .statusCode(201)
+    }
+
+
+    @When("the user reserves the book {string}")
+    fun reserveBook(title: String) {
+        given()
+                .contentType(ContentType.JSON)
+                .and()
+                .body(
+                        """
+                    {
+                      "name": "$title"
+                    }
+                """.trimIndent()
+                )
+                .`when`()
+                .patch("/books/reserve")
+                .then()
+                .statusCode(200)
     }
 
     @When("the user get all books")
@@ -55,17 +78,29 @@ class BookStepDefs {
     fun shouldHaveListOfBooks(payload: List<Map<String, Any>>) {
         val expectedResponse = payload.joinToString(separator = ",", prefix = "[", postfix = "]") { line ->
             """
-                ${
-                    line.entries.joinToString(separator = ",", prefix = "{", postfix = "}") {
-                        """"${it.key}": "${it.value}""""
-                    }
+            ${
+                line.entries.joinToString(separator = ",", prefix = "{", postfix = "}") {
+                    """"${it.key}": ${if (it.key == "available") it.value else "\"${it.value}\""}"""
                 }
-            """.trimIndent()
+            }
+        """.trimIndent()
 
         }
         assertThat(lastBookResult.extract().body().jsonPath().prettify())
-            .isEqualTo(JsonPath(expectedResponse).prettify())
+                .isEqualTo(JsonPath(expectedResponse).prettify())
+    }
 
+    @Then("the book {string} should be reserved")
+    fun shouldHaveReservedBook(title: String, dataTable: DataTable) {
+        // Convertir la DataTable en une liste de maps
+        val books = dataTable.asMaps<String, String>(String::class.java, String::class.java)
+
+        // Trouver le livre spécifié par le titre
+        val reservedBook = books.find { it["name"] == title }
+
+        // Vérifier si le livre a été trouvé et s'il est réservé
+        assertThat(reservedBook).isNotNull()
+        assertThat(reservedBook?.get("available")).isEqualTo("false")
     }
 
     companion object {

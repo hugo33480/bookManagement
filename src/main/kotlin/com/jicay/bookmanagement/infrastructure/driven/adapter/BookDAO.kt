@@ -22,9 +22,10 @@ class BookDAO(private val namedParameterJdbcTemplate: NamedParameterJdbcTemplate
 
     override fun createBook(book: Book) {
         namedParameterJdbcTemplate
-                .update("INSERT INTO BOOK (title, author) values (:title, :author)", mapOf(
+                .update("INSERT INTO BOOK (title, author, available) values (:title, :author, :available)", mapOf(
                         "title" to book.name,
-                        "author" to book.author
+                        "author" to book.author,
+                        "available" to book.available
                 ))
     }
 
