@@ -56,12 +56,29 @@ class BookDTOUseCaseTest {
         // Mocking
         val bookToReserve = Book("ReserveBook", "ReserveAuthor", true)
         every { bookPort.getBookByTitle("ReserveBook") } returns bookToReserve
+        justRun { bookPort.reserveBook(any()) }
 
         // Testing
         bookUseCase.reserveBook("ReserveBook")
 
         // Verification
         verify(exactly = 1) { bookPort.reserveBook("ReserveBook") }
+    }
+
+    @Test
+    fun `reserve book failure when book is not found`() {
+        // Mocking
+        every { bookPort.getBookByTitle("UnknownBook") } returns null
+
+        // Testing and Verification
+        assertThrows(IllegalArgumentException::class.java) {
+            bookUseCase.reserveBook("UnknownBook")
+        }
+
+        // Verification
+        verify(exactly = 1) { bookPort.getBookByTitle("UnknownBook") }
+        // Aucun appel à reserveBook ne devrait avoir lieu dans ce cas
+        verify(exactly = 0) { bookPort.reserveBook(any()) }
     }
 
     @Test
@@ -74,5 +91,10 @@ class BookDTOUseCaseTest {
         assertThrows(IllegalArgumentException::class.java) {
             bookUseCase.reserveBook("ReserveBook")
         }
+
+        // Verification
+        verify(exactly = 1) { bookPort.getBookByTitle("ReserveBook") }
+        // Aucun appel à reserveBook ne devrait avoir lieu dans ce cas
+        verify(exactly = 0) { bookPort.reserveBook(any()) }
     }
 }

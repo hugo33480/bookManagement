@@ -9,6 +9,7 @@ import com.jicay.bookmanagement.domain.model.Book
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Assert.assertThrows
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -81,6 +82,61 @@ class BookDAOIT {
         assertThat(res[0]["id"] is Int).isTrue()
         assertThat(res[0]["title"]).isEqualTo("Les misérables")
         assertThat(res[0]["author"]).isEqualTo("Victor Hugo")
+    }
+
+    @Test
+    fun `reserve book success`() {
+        // GIVEN
+        performQuery(
+                // language=sql
+                """
+        INSERT INTO book (title, author, available)
+        VALUES ('ReserveBook', 'ReserveAuthor', true);
+        """.trimIndent()
+        )
+
+        // WHEN
+        bookDAO.reserveBook("ReserveBook")
+
+        // THEN
+        val reservedBook = performQuery(
+                // language=sql
+                """
+        SELECT * FROM book WHERE title = 'ReserveBook';
+        """.trimIndent()
+        ).firstOrNull()
+
+        assertThat(reservedBook).isNotNull()
+        assertThat(reservedBook?.get("available")).isEqualTo(false)
+    }
+
+    @Test
+    fun `reserve book success with multiple books in database`() {
+        // GIVEN
+        performQuery(
+                // language=sql
+                """
+        INSERT INTO book (title, author, available)
+        VALUES 
+            ('Book1', 'Author1', true),
+            ('Book2', 'Author2', true),
+            ('Book3', 'Author3', true);
+        """.trimIndent()
+        )
+
+        // WHEN
+        bookDAO.reserveBook("Book2")
+
+        // THEN
+        val reservedBook = performQuery(
+                // language=sql
+                """
+        SELECT * FROM book WHERE title = 'Book2';
+        """.trimIndent()
+        ).firstOrNull()
+
+        assertThat(reservedBook).isNotNull()
+        assertThat(reservedBook?.get("available")).isEqualTo(false)
     }
 
     protected fun performQuery(sql: String): List<Map<String, Any>> {
